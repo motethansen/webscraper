@@ -97,7 +97,7 @@ The following example shows the step I went through. It should give you enough b
 
 The web site that holds his books is called bogbased.dk - it is a danish book club.
 
-![bogbasen](/Users/michaelhansen/Projects/Udemy/Python/webscraping/images/website-to-scrape)
+![bogbasen](images/website-to-scrape)
 
 Here is the link to his books (showing the first page):
 ```
