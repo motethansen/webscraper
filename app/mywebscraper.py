@@ -39,7 +39,12 @@ class book_page_scraper:
         self.book_entries = []  # appended list of books
         self.csvfilename = output_csvfilename
         self.entries = [] # list of entries per row
+        self.bookcollection = {}
         self.base_url = "http://www.bogbasen.dk"
+        # Connect to server
+        self.mongoclient = pymongo.MongoClient('localhost', 27017)
+        # Select the database
+        self.importdb = self.mongoclient.bookshelf
 
     def WriteImagetoDisk(self, imageURL):
        # resource = urllib.urlopen( imageURL )
@@ -69,6 +74,10 @@ class book_page_scraper:
 
     def set_numof_pages(self, pagestoScrape):
         self.numofpages = int(pagestoScrape)
+
+    def drop_importDB(self): # Drop collection from the mongoDB
+        print('Dropping collection bookimports')
+        self.importdb.bookimports.drop()
 
     def scrape_page(self):
         book = Book()
@@ -120,9 +129,28 @@ class book_page_scraper:
             self.entries.append(book.category)
             self.entries.append(book.price)
             self.entries.append(book.imageURL)
-            # book = Book(imageURL, book_title, book_author, book_publishdate, ISBN, category, price)
+
+            # filling our the collection
+            self.bookcollection['title'] = book.book_title
+            self.bookcollection['author'] = book.book_author
+            self.bookcollection['publish'] = book.book_publish
+            self.bookcollection['isbn'] = book.ISBN
+            self.bookcollection['category'] = book.category
+            self.bookcollection['price'] = book.price
+            self.bookcollection['imageurl'] = book.imageURL
+            
+            self.bookdata = dict(title=self.bookcollection['title'], 
+                                author=self.bookcollection['author'], 
+                                publish=self.bookcollection['publish'], 
+                                ISBN=self.bookcollection['isbn'],
+                                category=self.bookcollection['category'],  
+                                price=self.bookcollection['price'],
+                                image=self.bookcollection['imageurl'])
+            self.importdb.bookimports.insert(self.bookdata)
+            self.bookcollection = {}
             self.book_entries.append(self.entries)
             self.entries = []
+
             book.print_book()
 
     csv_columns = ['Title','author','published','ISBN','category','price','image']
@@ -151,4 +179,5 @@ for page_count in xrange (1,bookscrape.numofpages):
     bookscrape.scrape_page()
 
 bookscrape.write_cvs()
+bookscrape.mongoclient.close()
 # my_url = 'https://www.zalora.sg/women/accessories/sunglasses/'
