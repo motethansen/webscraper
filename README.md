@@ -232,3 +232,6 @@ below is an extract of the different objects we like to collect:
   if h3_object.a:
     book.book_author = h3_object.a.text.encode('utf-8')
 ```
+You will find the code repository here:
+
+[webscraper](https://github.com/motethansen/webscraper)
