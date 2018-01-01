@@ -1,9 +1,10 @@
 import bs4
+import urllib3
 from bs4 import BeautifulSoup as soup
-from urllib2 import urlopen as uOpen
 import csv
 # import for write image to file
 import os
+import io
 #import sys
 #import codecs
 import requests
@@ -39,6 +40,7 @@ class Book:
 class book_page_scraper:
     def __init__(self, output_csvfilename = "book_csv_file.csv"):
         self.book_entries = []  # appended list of books
+        self.response = ""
         self.csvfilename = output_csvfilename
         self.entries = [] # list of entries per row
         self.bookcollection = {}
@@ -70,12 +72,12 @@ class book_page_scraper:
     def page_url(self, url_link):
         self.my_url = url_link
         # opening the connection to read the page
-        uFile = uOpen(self.my_url) #- this is for python2
+        #uFile = uOpen(self.my_url) #- this is for python2
         #enabling python3 libs
-        #self.http = urllib3.PoolManager()
-        #self.response = self.http.request('GET', self.my_url)
-        self.html_page = uFile.read()
-        uFile.close()
+        self.http = urllib3.PoolManager()
+        self.response = self.http.request('GET', self.my_url)
+        #self.html_page = uFile.read()
+        #uFile.close()
 
     def set_numof_pages(self, pagestoScrape):
         self.numofpages = int(pagestoScrape)
@@ -88,14 +90,14 @@ class book_page_scraper:
         book = Book()
 
         # html parsing
-        page_soup = soup(self.html_page, "html.parser")
+        page_soup = soup(self.response.data, "html.parser")
         # grab each book entry
         containers = page_soup.findAll("li", {"class": "book-info"})
         for container in containers:
 
             # get the book imageURL
             if container.img:
-                imageURL = container.img['src'].encode('utf-8')
+                imageURL = container.img['src']
                 #write image to disk
                 #book.imageURL = self.WriteImagetoDisk(imageURL)
                 #store the remote image URL
@@ -103,32 +105,32 @@ class book_page_scraper:
 
             # get the book title
             if container.h2:
-                book.book_title = container.h2.text.encode('utf-8')
+                book.book_title = container.h2.text
 
             # get the books author
             if container.h3:
                 h3_object = container.h3
                 if h3_object.a:
-                    book.book_author = h3_object.a.text.encode('utf-8')
+                    book.book_author = h3_object.a.text
             p_objects = container.findAll("p")
             if p_objects:
                 for p in p_objects:
-                    if p.text.encode('utf-8').find("fra") != -1:
-                        book.book_publish = p.text.encode('utf-8')
-                    if p.text.encode('utf-8').find("ISBN") != -1:
+                    if p.text.find("fra") != -1:
+                        book.book_publish = p.text
+                    if p.text.find("ISBN") != -1:
                         if p.em:
-                            book.ISBN = p.em.text.encode('utf-8')
-                    if p.text.encode('utf-8').find("Kategori") != -1:
+                            book.ISBN = p.em.text
+                    if p.text.find("Kategori") != -1:
                         a_objects = p.findAll("a")
                         a_counter = 0
                         for a in a_objects:
                             if a:
-                                book.category.append(a.text.encode('utf-8'))
-                    if p.text.encode('utf-8').find("pris") != -1:
+                                book.category.append(a.text)
+                    if p.text.find("pris") != -1:
                         if p.em:
                             ems = p.find_all("em")
-                            if ems[0].text.encode('utf-8').find("pris"):
-                                book.price = ems[0].text.encode('utf-8')
+                            if ems[0].text.find("pris"):
+                                book.price = ems[0].text
 
             self.entries.append(book.book_title)
             self.entries.append(book.book_author)
@@ -172,7 +174,7 @@ class book_page_scraper:
 
     def write_cvs(self):
         try:
-            with open(self.csvfilename,"w" , "utf-8") as csvfile:
+            with io.open(self.csvfilename,mode='w', encoding='UTF-8') as csvfile:
                 writer = csv.writer(csvfile, dialect='excel', quoting=csv.QUOTE_NONNUMERIC)
                 writer.writerow(self.csv_columns)
                 for data in self.book_entries:
@@ -188,7 +190,7 @@ class book_page_scraper:
 
 
 bookscrape = book_page_scraper("booklist.csv")
-bookscrape.set_numof_pages(2)
+bookscrape.set_numof_pages(165)
 for page_count in range (1,bookscrape.numofpages):
     url_sting = "http://www.bogbasen.dk/soeg/?kategori=&forfatter=&lookup=a5250aac23c54b0f8919e8e98e58e642&titel=&fritekst=&soeg=true&aktuelside=" + str(page_count)
     bookscrape.page_url(url_sting)
