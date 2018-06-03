@@ -32,8 +32,9 @@ class Book:
         print("Author :" + self.book_author)
         print("Publisher :" + self.book_publish)
         print("ISBN :" + self.ISBN)
+        print("category-len:" + str(len(self.category)))
         for c in self.category:
-            print("Category :" + c)
+            print("Category :" + str(c))
         print("Price :" + self.price)
 
 
@@ -140,33 +141,36 @@ class book_page_scraper:
             self.entries.append(book.imageURL)
             for c in book.category:
                 self.entries.append(c)
-            
+
 
             # filling our the collection
-            self.bookcollection['title'] = book.book_title
-            self.bookcollection['author'] = book.book_author
-            self.bookcollection['publish'] = book.book_publish
-            self.bookcollection['isbn'] = book.ISBN
-            self.bookcollection['price'] = book.price
-            self.bookcollection['imageurl'] = book.imageURL
-            for c in book.category:
-                self.bookcollection['category'] = c
-            
-            
-#            self.bookdata = dict(title=self.bookcollection['title'], 
-#                                author=self.bookcollection['author'], 
-#                                publish=self.bookcollection['publish'], 
-#                                ISBN=self.bookcollection['isbn'],
-#                                category=self.bookcollection['category'],  
-#                                price=self.bookcollection['price'],
-#                                image=self.bookcollection['imageurl'])
-#            self.importdb.bookimports.insert(self.bookdata)
+            # self.bookcollection['title'] = book.book_title
+            # self.bookcollection['author'] = book.book_author
+            # self.bookcollection['publish'] = book.book_publish
+            # self.bookcollection['isbn'] = book.ISBN
+            # self.bookcollection['price'] = book.price
+            # self.bookcollection['imageurl'] = book.imageURL
+            # for c in book.category:
+            #     self.bookcollection['category'] = c
+
+
+            self.bookdata = dict(title=book.book_title,
+                               author=book.book_author,
+                               publish=book.book_publish,
+                               ISBN=book.ISBN,
+                               price=book.price,
+                               image=book.imageURL,
+                               category=book.category)
+
+            self.importdb.bookimports.insert(self.bookdata)
+
+            book.print_book()
+
             self.bookcollection = {}
             self.book_entries.append(self.entries)
             self.entries = []
             book.category = []
 
-            book.print_book()
             for item in book.category:
                 del item
 
@@ -190,7 +194,7 @@ class book_page_scraper:
 
 
 bookscrape = book_page_scraper("booklist.csv")
-bookscrape.set_numof_pages(165)
+bookscrape.set_numof_pages(163) #165
 for page_count in range (1,bookscrape.numofpages):
     url_sting = "http://www.bogbasen.dk/soeg/?kategori=&forfatter=&lookup=a5250aac23c54b0f8919e8e98e58e642&titel=&fritekst=&soeg=true&aktuelside=" + str(page_count)
     bookscrape.page_url(url_sting)
